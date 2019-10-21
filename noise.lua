@@ -56,7 +56,11 @@ local function indpos(d, s, i)
 end
 
 local function posind(d, s, p)
-
+	local f = 1
+	for i = 1, d do
+		f = f + (p[i] - 1)%s*s^(i - 1)
+	end
+	return floor(f)
 end
 
 local function indval(t, i)
@@ -65,12 +69,7 @@ end
 
 local function posval(t, p)
 	local d = #p
-	local n = (#t)^(1/d)
-	local f = 1
-	for i = 1, d do
-		f = f + (p[i] - 1)%n*n^(i - 1)
-	end
-	return t[floor(f)]
+	return t[posind(d, (#t)^(1/d), p)]
 end
 
 local function gentable(d, s)
