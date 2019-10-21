@@ -20,6 +20,10 @@ local function interp3(x, y, z, v000, v100, v010, v110, v001, v101, v011, v111)
 	return v000v100v010v110 + z*(v001v101v011v111 - v000v100v010v110)
 end
 
+x {aaa, baa, aba, bba, aab, bab, abb, bbb}
+y {aaabaa, ababba, aabbab, abbbbb}
+z {aaabaaababba, aabbababbbbb}
+
 local function corners3(x, y, z)
 	local x = floor(x)
 	local y = floor(y)
@@ -85,15 +89,21 @@ local function remap(x)
 end
 
 local function tween(p, v)
-	local f = 0
-	
+	local f = {}
+	for i0 = 1, #p do
+		local x = p[i0]
+		for i1 = 1, #v, 2 do
+			f[#f + 1] = (x - 1)*v[i] + x*v[i + 1]
+		end
+	end
 	return f
 end
 
 local function corners(t, p)
 	local f = {}
-	for i = 1, #p do
-
+	for i0 = 1, #t do
+		for i1 = 1, #p do
+		end
 	end
 	return f
 end
