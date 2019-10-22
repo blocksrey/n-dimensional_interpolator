@@ -1,3 +1,2 @@
-# n-dimensional stuff
-The algorithm is elegant. Generate a table of random values and then basically interpolate.
-Functionality for generating tables is included.
+# N-Dimensional Noise
+The idea is simple and elegant. Generate an array of random values in the form of a cube in n-dimensional space, then interpolate the values. Functionality for generating the arrays is included.

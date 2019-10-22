@@ -43,39 +43,35 @@ local function noise3(x, y, z)
 end
 --]]
 
-local rand  = math.random
-local floor = math.floor
+local remove = table.remove
+local rand   = math.random
+local floor  = math.floor
 
 --n-dimensional array stitch
---p: {x, y, ...}
---n: side length (int) of n-dimensional cube
+--p: {x, y, ...} (tween position; values should be constricted within 0 and 1)
+--s: side length (int) of n-dimensional cube
 --returns an index corresponding with the coordinate
 --  |1 2 3|
---n |4 5 6|
+--s |4 5 6|
 --  |7 8 9|
---     n
+--     s
 
-local function indpos(d, s, i)
-
-end
-
+--vector position to table index
 local function posind(d, s, p)
 	local f = 1
 	for i = 1, d do
 		f = f + (p[i] - 1)%s*s^(i - 1)
 	end
-	return floor(f)
+	return floor(f)--thanks
 end
 
-local function indval(t, i)
-	return t[i]
-end
-
+--vector position to table value
 local function posval(t, p)
 	local d = #p
 	return t[posind(d, (#t)^(1/d), p)]
 end
 
+--generates a noise table
 local function gentable(d, s)
 	local f = {}
 	for i = 1, d^s do
@@ -84,34 +80,56 @@ local function gentable(d, s)
 	return f
 end
 
+--quadratic interpolation
 local function remap(x)
 	return 2*x < 1 and 2*x*x or 1 - 2*(x - 1)*(x - 1)
 end
 
-local function tween(p, v)
-	local f = {}
-	for i0 = 1, #p do
-		local x = p[i0]
-		for i1 = 1, #v, 2 do
-			f[#f + 1] = (x - 1)*v[i] + x*v[i + 1]
+--interpolate values in n-dimensions
+local function tween(v, p)
+	local n = #v
+	if n > 2 then
+		local f = {}
+		local x = p[1]
+		for i = 1, n, 2 do
+			f[#f + 1] = (1 - x)*v[i] + x*v[i + 1]
 		end
+		remove(p, 1)
+		return tween(f, p)
+	else
+		local x = p[1]
+		return (1 - x)*v[1] + x*v[2]
 	end
-	return f
 end
 
+--get the corners (vertex values) of the n-dimensional cube
 local function corners(t, p)
 	local f = {}
-	for i0 = 1, #t do
-		for i1 = 1, #p do
-		end
+	local intpos = {}
+	for i = 1, #p do
+		intpos[i] = floor(p[i])
+	end
+	for i = 1, 2*#p, 2 do
+		f[i]     = posval()
+		f[i + 1] = posval()
 	end
 	return f
 end
 
-local function noise(t, p)
-	return tween(t, p, corners(t, p))
+--constrain values within tweening limitations
+local function constrain(p)
+	local f = {}
+	for i = 1, #p do
+		f[i] = remap(p%1)
+	end
+	return f
 end
 
-local table = gentable(3, 10)
-local value = noise(table, {0, 0, 0})
+--do the thing
+local function noise(t, p)
+	return tween(corners(t, p), constrain(p))
+end
+
+local table = gentable(2, 10)
+local value = noise(table, {12.1, 2.4})
 print(value)
