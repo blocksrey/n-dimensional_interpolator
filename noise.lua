@@ -1,52 +1,3 @@
---[[
-local function interp2(x, y, v00, v10, v01, v11)
-	local x = remap(x)
-	local y = remap(y)
-	local v00v10 = v00 + x*(v10 - v00)
-	local v01v11 = v01 + x*(v11 - v01)
-	return v00v10 + y*(v01v11 - v00v10)
-end
-
-local function interp3(x, y, z, v000, v100, v010, v110, v001, v101, v011, v111)
-	local x = remap(x)
-	local y = remap(y)
-	local z = remap(z)
-	local v000v100 = v000 + x*(v100 - v000)
-	local v010v110 = v010 + x*(v110 - v010)
-	local v001v101 = v001 + x*(v101 - v001)
-	local v011v111 = v011 + x*(v111 - v011)
-	local v000v100v010v110 = v000v100 + y*(v010v110 - v000v100)
-	local v001v101v011v111 = v001v101 + y*(v011v111 - v001v101)
-	return v000v100v010v110 + z*(v001v101v011v111 - v000v100v010v110)
-end
-
-x {aaa, baa, aba, bba, aab, bab, abb, bbb}
-y {aaabaa, ababba, aabbab, abbbbb}
-z {aaabaaababba, aabbababbbbb}
-
-local function corners3(x, y, z)
-	local x = floor(x)
-	local y = floor(y)
-	local z = floor(z)
-	return stitch(noisetab, {x    , y    , z    }),
-	       stitch(noisetab, {x + 1, y    , z    }),
-	       stitch(noisetab, {x    , y + 1, z    }),
-	       stitch(noisetab, {x + 1, y + 1, z    }),
-	       stitch(noisetab, {x    , y    , z + 1}),
-	       stitch(noisetab, {x + 1, y    , z + 1}),
-	       stitch(noisetab, {x    , y + 1, z + 1}),
-	       stitch(noisetab, {x + 1, y + 1, z + 1})
-end
-
-local function noise3(x, y, z)
-	return interp3(x%1, y%1, z%1, corners3(x, y, z))
-end
---]]
-
-local remove = table.remove
-local rand   = math.random
-local floor  = math.floor
-
 --n-dimensional array stitch
 --p: {x, y, ...} (tween position; values should be constricted within 0 and 1)
 --s: side length (int) of n-dimensional cube
@@ -55,81 +6,150 @@ local floor  = math.floor
 --s |4 5 6|
 --  |7 8 9|
 --     s
+--x {aaa, baa, aba, bba, aab, bab, abb, bbb}
+--y {aaabaa, ababba, aabbab, abbbbb}
+--z {aaabaaababba, aabbababbbbb}
 
---vector position to table index
-local function posind(d, s, p)
-	local f = 1
-	for i = 1, d do
-		f = f + (p[i] - 1)%s*s^(i - 1)
-	end
-	return floor(f)--thanks
+local remove = table.remove
+local floor  = math.floor
+local rand   = math.random
+
+local function remap(x)
+	return 2*x < 1 and 2*x*x or 1 - 2*(x - 1)*(x - 1)
 end
 
---vector position to table value
-local function posval(t, p)
-	local d = #p
-	return t[posind(d, (#t)^(1/d), p)]
-end
-
---generates a noise table
-local function gentable(d, s)
+local function gentable(s, d)
 	local f = {}
-	for i = 1, d^s do
+	for i = 1, s^d do
 		f[i] = rand()
 	end
 	return f
 end
 
---quadratic interpolation
-local function remap(x)
-	return 2*x < 1 and 2*x*x or 1 - 2*(x - 1)*(x - 1)
+local function stitch1(s, x)
+	return
+		1 +
+		(x - 1)%s
 end
 
---interpolate values in n-dimensions
-local function tween(v, p)
+local function stitch2(s, x, y)
+	return
+		1 +
+		(x - 1)%s +
+		(y - 1)%s*s
+end
+
+local function stitch3(s, x, y, z)
+	return
+		1 +
+		(x - 1)%s +
+		(y - 1)%s*s +
+		(z - 1)%s*s*s
+end
+
+local function stitchn(s, p)
+	local f = 1
+	for i = 1, #p do
+		f = f + (p[i] - 1)%s*s^(i - 1)
+	end
+	return floor(f)
+end
+
+local function vertex1(t, x)
+	local s = #t
+	local fx = floor(x)
+	return
+		t[stitch1(s, fx    )],
+		t[stitch1(s, fx + 1)]
+end
+
+local function vertex2(t, x, y)
+	local s = (#t)^(1/2)
+	local fx = floor(x)
+	local fy = floor(y)
+	return
+		t[stitch2(s, fx    , fy    )],
+		t[stitch2(s, fx + 1, fy    )],
+		t[stitch2(s, fx    , fy + 1)],
+		t[stitch2(s, fx + 1, fy + 1)]
+end
+
+local function vertex3(t, x, y, z)
+	local s = (#t)^(1/3)
+	local fx = floor(x)
+	local fy = floor(y)
+	local fz = floor(z)
+	return
+		t[stitch3(s, fx    , fy    , fz    )],
+		t[stitch3(s, fx + 1, fy    , fz    )],
+		t[stitch3(s, fx    , fy + 1, fz    )],
+		t[stitch3(s, fx + 1, fy + 1, fz    )],
+		t[stitch3(s, fx    , fy    , fz + 1)],
+		t[stitch3(s, fx + 1, fy    , fz + 1)],
+		t[stitch3(s, fx    , fy + 1, fz + 1)],
+		t[stitch3(s, fx + 1, fy + 1, fz + 1)]
+end
+
+local function vertexn(t, p)
+	local d = #p
+	local t = 2^d
+	for i = 1, t do
+		print(i)
+	end
+end
+
+local function interp1(x, a, b)
+	return a + x*(b - a)
+end
+
+local function interp2(x, y, aa, ba, ab, bb)
+	local aaba = aa + x*(ba - aa)
+	local abbb = ab + x*(bb - ab)
+	return aaba + y*(abbb - aaba)
+end
+
+local function interp3(x, y, z, aaa, baa, aba, bba, aab, bab, abb, bbb)
+	local aaabaa = aaa + x*(baa - aaa)
+	local ababba = aba + x*(bba - aba)
+	local aabbab = aab + x*(bab - aab)
+	local abbbbb = abb + x*(bbb - abb)
+	local aaabaaababba = aaabaa + y*(ababba - aaabaa)
+	local aabbababbbbb = aabbab + y*(abbbbb - aabbab)
+	return aaabaaababba + z*(aabbababbbbb - aaabaaababba)
+end
+
+local function interpn(p, v)
 	local n = #v
 	if n > 2 then
 		local f = {}
 		local x = p[1]
 		for i = 1, n, 2 do
-			f[#f + 1] = (1 - x)*v[i] + x*v[i + 1]
+			f[1/2*(i + 1)] = (1 - x)*v[i] + x*v[i + 1]
 		end
 		remove(p, 1)
-		return tween(f, p)
+		return interpn(p, f)
 	else
 		local x = p[1]
 		return (1 - x)*v[1] + x*v[2]
 	end
 end
 
---get the corners (vertex values) of the n-dimensional cube
-local function corners(t, p)
-	local f = {}
-	local intpos = {}
-	for i = 1, #p do
-		intpos[i] = floor(p[i])
-	end
-	for i = 1, 2*#p, 2 do
-		f[i]     = posval()
-		f[i + 1] = posval()
-	end
-	return f
+local noise = {}
+
+function noise.noise1(t, x)
+	return interp1(x, vertex1(t, x))
 end
 
---constrain values within tweening limitations
-local function constrain(p)
-	local f = {}
-	for i = 1, #p do
-		f[i] = remap(p%1)
-	end
-	return f
+function noise.noise2(t, x, y)
+	return interp2(x, y, vertex2(t, x, y))
 end
 
---do the thing
-local function noise(t, p)
-	return tween(corners(t, p), constrain(p))
+function noise.noise3(t, x, y, z)
+	return interp3(x, y, z, vertex3(t, x, y, z))
 end
 
-local table = gentable(2, 10)
-local value = noise(table, {12.1, 2.4})
-print(value)
+function noise.noisen(t, p)
+	return interpn(p, vertexn(t, p))
+end
+
+return noise
