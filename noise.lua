@@ -18,7 +18,7 @@ local function remap(x)
 	return 2*x < 1 and 2*x*x or 1 - 2*(x - 1)*(x - 1)
 end
 
-local function gentable(s, d)
+local function generate(s, d)
 	local f = {}
 	for i = 1, s^d do
 		f[i] = rand()
@@ -26,7 +26,7 @@ local function gentable(s, d)
 	return f
 end
 
-local function stitch1(s, x)
+local function stitch(s, x)
 	return
 		1 +
 		(x - 1)%s
@@ -55,39 +55,39 @@ local function stitchn(s, p)
 	return floor(f)
 end
 
-local function vertex1(t, x)
+local function vertex(t, x)
 	local s = #t
-	local fx = floor(x)
+	local i = floor(x)
 	return
-		t[stitch1(s, fx    )],
-		t[stitch1(s, fx + 1)]
+		t[stitch(s, i    )],
+		t[stitch(s, i + 1)]
 end
 
 local function vertex2(t, x, y)
 	local s = (#t)^(1/2)
-	local fx = floor(x)
-	local fy = floor(y)
+	local i = floor(x)
+	local j = floor(y)
 	return
-		t[stitch2(s, fx    , fy    )],
-		t[stitch2(s, fx + 1, fy    )],
-		t[stitch2(s, fx    , fy + 1)],
-		t[stitch2(s, fx + 1, fy + 1)]
+		t[stitch2(s, i    , j    )],
+		t[stitch2(s, i + 1, j    )],
+		t[stitch2(s, i    , j + 1)],
+		t[stitch2(s, i + 1, j + 1)]
 end
 
 local function vertex3(t, x, y, z)
 	local s = (#t)^(1/3)
-	local fx = floor(x)
-	local fy = floor(y)
-	local fz = floor(z)
+	local i = floor(x)
+	local j = floor(y)
+	local k = floor(z)
 	return
-		t[stitch3(s, fx    , fy    , fz    )],
-		t[stitch3(s, fx + 1, fy    , fz    )],
-		t[stitch3(s, fx    , fy + 1, fz    )],
-		t[stitch3(s, fx + 1, fy + 1, fz    )],
-		t[stitch3(s, fx    , fy    , fz + 1)],
-		t[stitch3(s, fx + 1, fy    , fz + 1)],
-		t[stitch3(s, fx    , fy + 1, fz + 1)],
-		t[stitch3(s, fx + 1, fy + 1, fz + 1)]
+		t[stitch3(s, i    , j    , k    )],
+		t[stitch3(s, i + 1, j    , k    )],
+		t[stitch3(s, i    , j + 1, k    )],
+		t[stitch3(s, i + 1, j + 1, k    )],
+		t[stitch3(s, i    , j    , k + 1)],
+		t[stitch3(s, i + 1, j    , k + 1)],
+		t[stitch3(s, i    , j + 1, k + 1)],
+		t[stitch3(s, i + 1, j + 1, k + 1)]
 end
 
 local function vertexn(t, p)
@@ -98,7 +98,7 @@ local function vertexn(t, p)
 	end
 end
 
-local function interp1(x, a, b)
+local function interp(x, a, b)
 	return a + x*(b - a)
 end
 
@@ -136,8 +136,8 @@ end
 
 local noise = {}
 
-function noise.noise1(t, x)
-	return interp1(x, vertex1(t, x))
+function noise.noise(t, x)
+	return interp(x, vertex(t, x))
 end
 
 function noise.noise2(t, x, y)
